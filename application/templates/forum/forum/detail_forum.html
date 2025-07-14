@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum Topics Layout</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter as the default font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-400 p-4 sm:p-6 lg:p-8">
+
+    <div class="flex flex-col max-w-7xl mx-auto">
+
+        <div class="mb-2 flex justify-between items-center">
+            <h1 class="text-black font-extrabold">{{ forum.name }}</h1>
+            <form method="post" action="{% url 'create_thread_url' forum.id %}" class="bg-blue-600 text-white p-1 mr-20">
+                {% csrf_token %}
+                <button type="submit">Create Topic</button>
+            </form>
+        </div>
+        <!-- Forum container -->
+        <div class="bg-gray-400 border border-gray-200 rounded-lg shadow-sm overflow-auto">
+            
+            <!-- Header Row -->
+            <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                <div class="flex items-center text-xs font-semibold text-black uppercase tracking-wider">
+                    <div class="w-full md:w-1/2 lg:w-7/12 pl-10">Threads</div>
+                    <div class="hidden md:block w-1/12 text-center">Comments</div>
+                    <div class="hidden md:block w-1/12 text-center">Views</div>
+                    <div class="w-1/3 md:w-3/12 lg:w-1/4 text-left">Last Post</div>
+                </div>
+            </div>
+
+            <!-- Topics List -->
+            <div>
+                {% for thread in forum.threads.all %}
+                <!-- Topic Row -->
+                <div class="flex items-center p-4 hover:bg-gray-50 border-b border-gray-200 text-sm">
+                    <div class="w-full md:w-1/2 lg:w-7/12 flex items-center">
+                        <div class="w-10 flex-shrink-0">
+                            <!-- Topic Icon -->
+                            <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        </div>
+                        <div>
+                            <a href="{% url 'detail_thread_url' thread.id %}" class="font-semibold text-black hover:underline">{{thread.title}}</a>
+                            <p class="text-xs text-black mt-1">by <a href="#" class="text-blackhover:underline font-semibold">{{thread.author.username}}</a> » Fri Jul 11, 2025 10:25 pm</p>
+                        </div>
+                    </div>
+                    <div class="hidden md:block w-1/12 text-center text-black">0</div>
+                    <div class="hidden md:block w-1/12 text-center text-black">8</div>
+                    <div class="w-1/3 md:w-3/12 lg:w-1/4 text-black">
+                        <p>by <a href="#" class="text-black hover:underline font-semibold">{{thread.author.username}}</a> 
+                            <a href="#" class="inline-block align-middle ml-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg></a>
+                        </p>
+                        <p class="text-xs text-black">Fri Jul 11, 2025 10:25 pm</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

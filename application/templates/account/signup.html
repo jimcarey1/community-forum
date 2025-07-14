@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-200 text-gray-800">
+  <div class="min-h-screen flex justify-center">
+    <div class="p-8 rounded-lg shadow-md w-full">
+      <div class="flex justify-center">
+        <p class="font-bold text-3xl underline">Sign up</p>
+      </div>
+      <form method="post" class="text-[15px] space-y-6 mb-2">
+        <div class="flex items-center">
+          <div class="w-1/5 flex flex-col">
+            <label for="{{ form.username.id_for_label }}" class="block text-gray-700 text-sm font-semibold mb-2">
+              {{ form.username.label }}
+            </label>
+            <p class="text-xs text-gray-500">
+              Length must be between 3 characters and 20 characters.
+            </p>
+          </div>
+          <input type="text" 
+          name="username" 
+          minlength="1" maxlength="50" 
+          required="" 
+          id="id_username"
+          class="flex-grow basis-1/5 max-w-[300px] h-[25px] shadow border-2 border-gray-400 py-2 px-3 focus:outline-none focus:shadow-outline"
+          >
+        </div>
+
+        <div class="flex items-center">
+          <div class="w-1/5 flex flex-col">
+            <label for="{{ form.password1.id_for_label }}" class="block text-gray-700 text-sm font-semibold mb-2">
+              {{ form.password1.label }}
+            </label>
+            <p class="text-xs text-gray-500">
+              Password must be at least 8 characters, include mixed‑case letters and numbers.
+            </p>
+          </div>
+          <input type="password" 
+          name="password1" 
+          required="" 
+          aria-describedby="id_password1_helptext" 
+          id="id_password1"
+          class="flex-grow basis-1/5 max-w-[300px] h-[25px] shadow border-2 border-gray-400 py-2 px-3 focus:outline-none focus:shadow-outline"
+          >
+        </div>
+
+        <div class="flex items-center">
+          <div class="w-1/5 flex flex-col">
+            <label for="{{ form.password2.id_for_label }}" class="block text-gray-700 text-sm font-semibold mb-2">
+              {{ form.password2.label }}
+            </label>
+          </div>
+          <input type="password" 
+          name="password2" 
+          required="" 
+          id="id_password2"
+          class="flex-grow basis-1/5 max-w-[300px] h-[25px] shadow border-2 border-gray-400 py-2 px-3 focus:outline-none focus:shadow-outline"
+          >
+        </div>
+
+        <div class="flex items-center">
+          <div class="w-1/5 flex flex-col">
+            <label for="{{ form.email.id_for_label }}" class="block text-gray-700 text-sm font-semibold mb-2">
+              {{ form.email.label }}
+            </label>
+          </div>
+          <input type="email" 
+          name="email" 
+          maxlength="320" 
+          required="" 
+          id="id_email"
+          class="flex-grow basis-1/5 max-w-[300px] h-[25px] shadow border-2 border-gray-400 py-2 px-3 focus:outline-none focus:shadow-outline"
+          >
+        </div>
+
+        <div class="flex justify-center">
+          <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-600 items-center text-white font-semibold py-2 px-6 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+          >
+            Register
+          </button>
+        </div>
+      </form>
+
+      <div class="flex justify-center mb-2">
+        <p class="font-semibold">Already have an account, then please <a class="bg-green-300 p-1" href="{{ login_url }}">Log in</a></p>
+      </div>
+
+      {% if SOCIALACCOUNT_ENABLED %}
+      <ul class="mt-4 flex justify-center">
+        <li>
+          <a
+            title="Google"
+            href="/accounts/google/login/?process=login"
+            class="inline-flex items-center border border-gray-300 rounded py-2 px-4 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+          >
+            <svg class="w-5 h-5 mr-2" viewBox="0 0 488 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+              <!-- Google “G” icon path -->
+              <path d="M488 261.8c0-17.8-1.6-35-4.6-51.8H249v98h134.6c-5.8 31.4-23.4 58-49.8 75.8v63.2h80.6c47.2-43.4 74.6-107.8 74.6-185.2z"/>
+              <path d="M249 512c67.2 0 123.6-22.4 164.8-60.8l-80.6-63.2c-22.4 15-51.2 24-84.2 24-64.8 0-119.6-43.8-139.4-102.6H27.2v64.6C68.6 462 153.4 512 249 512z"/>
+              <path d="M109.6 307.4c-4.8-14.4-7.6-29.6-7.6-45.4s2.8-31 7.6-45.4V152h-82.4C11.6 196 0 230.8 0 262s11.6 66 27.2 110l82.4-64.6z"/>
+              <path d="M249 100.8c35.6 0 67.6 12.2 92.8 36l69.6-69.6C373 24.2 317.2 0 249 0 153.4 0 68.6 50 27.2 127.4l82.4 64.6C129.4 144.6 184.2 100.8 249 100.8z"/>
+            </svg>
+            Continue with Google
+          </a>
+        </li>
+      </ul>
+      {% endif %}
+
+    </div>
+  </div>
+</body>
+</html>

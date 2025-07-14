@@ -1,0 +1,172 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {{form.media}}
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Vertical line for comment threads, now clickable */
+        .comment-thread-line {
+            position: absolute;
+            left: 18px; /* Adjusted for alignment */
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e5e7eb; /* gray-200 */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .comment-thread-line:hover {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        /* Style for when a thread is collapsed */
+        .thread-collapsed .comment-thread-line {
+            background-color: #9ca3af; /* gray-400 */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto max-w-4xl p-4">
+        <!-- Main Thread Post -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div class="flex">
+                <!-- Voting Section -->
+                <div class="flex flex-col items-center mr-4 text-gray-500">
+                    <button class="hover:text-red-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                    </button>
+                    <span class="font-bold text-lg text-gray-800">
+                        <!-- {{ thread.votes }} -->
+                        1.2k
+                    </span>
+                    <button class="hover:text-blue-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Post Content -->
+                <div class="w-full">
+                    <p class="text-xs text-gray-500 mb-2">
+                        Posted by <a href="#" class="font-medium text-blue-600 hover:underline">u/{{ thread.author.username }}</a>
+                        {{ thread.created_on|timesince }} ago
+                    </p>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-3">
+                        {{ thread.title }}
+                    </h1>
+                    <p class="text-gray-700 leading-relaxed">
+                        {{ thread.content|safe }}
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center space-x-4 mt-4 text-gray-500">
+                        <button class="flex items-center space-x-1 hover:bg-gray-100 p-2 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            <span class="text-sm font-medium">
+                                {{ thread.comments.count }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if request.user.is_authenticated %}
+        <!-- Only show the comment form if the user is authenticated -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <p class="text-sm mb-2">Comment as <span class="text-blue-600 font-medium">u/{{ user.username }}</span></p>
+            <form method="post">
+                {% csrf_token %}
+                {{form}}
+                <div class="flex justify-end mt-2">
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-700 transition duration-300">
+                        Comment
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Comments Section -->
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-bold mb-4">Comments</h2> 
+            {% for comment in comments %}
+                {% include "forum/comment/comment.html" with comment=comment %}
+            {% empty %}
+                <p class="text-gray-500">No comments yet. Be the first to share your thoughts!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Find all comment toggle buttons
+            const toggleButtons = document.querySelectorAll('.comment-toggle-btn');
+
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    // Find the closest parent comment-container
+                    const parentComment = this.closest('.comment-container');
+                    
+                    if (parentComment) {
+                        // Find the replies container within this comment container
+                        const replies = parentComment.querySelector('.replies-container');
+                        // Find the main body of the comment
+                        const commentBody = parentComment.querySelector('.comment-body');
+                        // Find the metadata to hide
+                        const commentMeta = parentComment.querySelectorAll('.comment-meta-hidden');
+
+                        if (replies) {
+                            // Toggle visibility of the replies
+                            replies.classList.toggle('hidden');
+                        }
+
+                        if (commentBody) {
+                             // Toggle visibility of the comment body
+                            commentBody.classList.toggle('hidden');
+                        }
+                        
+                        // Toggle the button text
+                        if (this.textContent === '[+]') {
+                            this.textContent = '[-]';
+                             commentMeta.forEach(meta => meta.classList.remove('hidden'));
+                        } else {
+                            this.textContent = '[+]';
+                             commentMeta.forEach(meta => meta.classList.add('hidden'));
+                        }
+                    }
+                });
+            });
+
+            // Initially collapse all replies by default for a cleaner look
+            document.querySelectorAll('.comment-toggle-btn').forEach(button => {
+                 // Don't trigger click on buttons inside already hidden containers
+                if (!button.closest('.hidden')) {
+                    button.click();
+                }
+            });
+        });
+        window.ClassicEditor
+            .create( document.querySelector( '#editor' ), {
+                licenseKey: 'GPL',
+                height: 200 
+            } )
+            .then( editor => {
+                window.editor = editor; 
+            } )
+            .catch( error => {
+                console.log('You got an error')
+                console.error( error );
+            } );
+
+    </script>
+</body>
+</html>

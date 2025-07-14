@@ -1,0 +1,28 @@
+<nav class="bg-gray-800 p-4">
+    <div class="container mx-auto flex items-center justify-between">
+        <div class="flex items-center">
+        <a href="#" class="text-white text-lg font-bold">
+            Home
+        </a>
+        </div>
+
+        <div class="flex mx-4">
+        <input type="text" placeholder="Search" class="w-[600px] bg-gray-700 text-white rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+
+        <div class="flex items-center space-x-4">
+            {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'account_logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Log out</button>
+                </form>
+                <button class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                Profile
+                </button>
+            {% else %}
+                <a href="{% url 'account_login' %}" id="login-link" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Sign up</a>
+                <a href="{% url 'account_signup' %}" id="signup-link" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Log in</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forum Layout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="flex flex-col">
+        {% include 'layout/navbar.html' %}
+        <div class="container mx-auto p-4">
+            {% for category in categories %}
+                <div class="mb-8">
+                    <div class="bg-gray-200 p-3 font-bold text-lg">
+                        <a href="{% url 'detail_category_url' category.id %}">
+                            {{category.name}}
+                        </a>
+                    </div>
+                        <div class="border border-gray-300">
+                            {% for forum in category.forums.all %}
+                            <div class="flex items-center p-3 border-b border-gray-300">
+                                <div class="w-7/12">
+                                    <p class="font-semibold">
+                                        <a href="{% url 'detail_forum_url' forum.id %}">{{forum.name}}</a>
+                                    </p>
+                                    <p class="text-sm text-gray-600">{{forum.description}}</p>
+                                </div>
+
+                                <div class="w-1/12 text-center">459</div>
+                                <div class="w-1/12 text-center">696</div>
+
+                                <div class="w-2/12 text-sm text-gray-700">
+                                    <p>phpBB 3.3.15 Release - Event...</p>
+                                    <p>by Marc</p>
+                                    <p>Wed Apr 02, 2025 2:46 pm</p>
+                                </div>
+
+                            </div>
+                            {% endfor %}
+                        </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

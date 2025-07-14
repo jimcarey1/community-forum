@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>phpBB Forum Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* A dark background similar to the image */
+        }
+        /* Custom styles for the forum */
+        .forum-header {
+            background-color: #0d47a1; /* A blue shade for headers */
+        }
+        .category-header {
+            background-color: #1565c0;
+        }
+        .row-light {
+            background-color: #2d3748;
+        }
+        .row-dark {
+            background-color: #1a202c;
+        }
+        .forum-icon {
+            width: 50px;
+            height: 50px;
+            background-color: #4a5568;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-400">
+
+    <div class="container mx-auto p-4">
+
+        <!-- General Category Header -->
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-2xl font-bold text-black">General</h1>
+        </div>
+
+        <!-- Forum Section -->
+        <div class="border-b border-gray-700 bg-blue-300">
+            <div class="grid grid-cols-12 text-black uppercase font-bold text-xs p-3">
+                <div class="col-span-12 md:col-span-7">Forum</div>
+                <div class="hidden md:block col-span-1 text-center">Topics</div>
+                <div class="hidden md:block col-span-1 text-center">Posts</div>
+                <div class="hidden md:block col-span-3">Last Post</div>
+            </div>
+        </div>
+        
+        <div class="border-x border-b border-gray-700">
+            <!-- Forum Row 1: Announcements -->
+             {% for forum in category.forums.all %}
+                <div class="grid grid-cols-12 p-3 items-center border-b border-gray-700">
+                    <div class="col-span-1 flex justify-center items-center">
+                        <div class="w-10 h-10 bg-gray-600 rounded-md flex items-center justify-center">
+                            <i class="fas fa-bullhorn text-black"></i>
+                        </div>
+                    </div>
+                    <div class="col-span-11 md:col-span-6 pl-3">
+                        <a href="{% url 'detail_forum_url' forum.id %}" class="font-semibold text-black">{{forum.name}}</a>
+                        <p class="text-sm text-black">{{forum.description}}</p>
+                    </div>
+                    <div class="col-span-2 md:col-span-1 text-center text-black">459</div>
+                    <div class="col-span-2 md:col-span-1 text-center text-black">696</div>
+                    <div class="col-span-7 md:col-span-3 text-sm">
+                        <a href="#" class="text-black">phpBB 3.3.15 Release - Event ...</a>
+                        <p class="text-black">by <a href="#" class="text-black hover:underline">Marc</a> <i class="fas fa-external-link-alt text-xs"></i></p>
+                        <p class="text-black">Wed Apr 02, 2025 2:46 pm</p>
+                    </div>
+                </div>
+             {% endfor %}
+        </div>
+
+
+        <!-- Spacer -->
+        <div class="h-8"></div>
+
+        <!-- Active Topics Section -->
+        <div class="border-b border-gray-700 bg-blue-300">
+            <div class="grid grid-cols-12 text-black uppercase font-bold text-xs p-3">
+                <div class="col-span-12 md:col-span-7">Active Topics</div>
+                <div class="hidden md:block col-span-1 text-center">Replies</div>
+                <div class="hidden md:block col-span-1 text-center">Views</div>
+                <div class="hidden md:block col-span-3">Last Post</div>
+            </div>
+        </div>
+
+        <div class="border-x border-b border-gray-700">
+            <!-- Topic Row Example -->
+            <div class="grid grid-cols-12 p-3 items-center border-b border-gray-700">
+                <div class="col-span-1 flex justify-center items-center">
+                     <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                        <i class="far fa-comments text-black"></i>
+                    </div>
+                </div>
+                <div class="col-span-11 md:col-span-6 pl-3">
+                    <a href="#" class="font-semibold text-black">[README] Scam warning / Good practices for hiring developers</a>
+                    <p class="text-sm text-gray-400">by <a href="#" class="text-black hover:underline">Marshalrusty</a> » Mon Nov 22, 2010 1:11 pm</p>
+                </div>
+                <div class="col-span-2 md:col-span-1 text-center text-black">0</div>
+                <div class="col-span-2 md:col-span-1 text-center text-black">341586</div>
+                <div class="col-span-7 md:col-span-3 text-sm">
+                     <p class="text-gray-400">by <a href="#" class="text-black hover:underline">Marshalrusty</a> <i class="fas fa-external-link-alt text-xs"></i></p>
+                     <p class="text-gray-400">Mon Nov 22, 2010 1:11 pm</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
