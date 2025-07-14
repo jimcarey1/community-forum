@@ -83,7 +83,7 @@
         <!-- Only show the comment form if the user is authenticated -->
         <div class="bg-white rounded-lg shadow-md p-4 mb-6">
             <p class="text-sm mb-2">Comment as <span class="text-blue-600 font-medium">u/{{ user.username }}</span></p>
-            <form method="post">
+            <form method="post" action="{% url 'create_comment_url' thread.id %}">
                 {% csrf_token %}
                 {{form}}
                 <div class="flex justify-end mt-2">
