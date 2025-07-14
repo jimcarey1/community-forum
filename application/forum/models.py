@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 
 from django_ckeditor_5.fields import CKEditor5Field
 
@@ -69,10 +70,23 @@ class Thread(models.Model):
             self.slug = slug_field(self.title)
         super().save(*args, **kwargs)
     
+    @property
+    def total_votes(self):
+        return self.votes.aggregate(total=Sum('value'))['total'] or 0
+    
     class Meta:
         db_table = 'threads'
         ordering = ['-created_on']
         permissions = [('can_lock', 'Can Lock')]
+
+class Vote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    thread = models.ForeignKey(Thread, related_name='votes', on_delete=models.CASCADE)
+    value = models.IntegerField()
+
+    class Meta:
+        db_table = 'thread_votes'
+        unique_together = ('user', 'thread')
     
 class Comment(models.Model):
     content = CKEditor5Field('Content', config_name='extends')

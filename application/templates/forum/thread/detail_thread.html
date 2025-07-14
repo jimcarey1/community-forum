@@ -30,7 +30,12 @@
         .thread-collapsed .comment-thread-line {
             background-color: #9ca3af; /* gray-400 */
         }
-
+        .upvoted {
+            color: #ef4444;
+        }
+        .downvoted {
+            color: #3b82f6;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -41,16 +46,15 @@
             <div class="flex">
                 <!-- Voting Section -->
                 <div class="flex flex-col items-center mr-4 text-gray-500">
-                    <button class="hover:text-red-500">
+                    <a id="upvote-btn" href="{% url 'vote_thread_url' thread.id 1 %}" class="hover:text-red-500 {% if user_vote == 1 %}upvoted{% endif %}">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-                    </button>
-                    <span class="font-bold text-lg text-gray-800">
-                        <!-- {{ thread.votes }} -->
-                        1.2k
+                    </a>
+                    <span id="vote-count" class="font-bold text-lg text-gray-800">
+                        {{ thread.total_votes }}
                     </span>
-                    <button class="hover:text-blue-500">
+                    <a id="downvote-btn" href="{% url 'vote_thread_url' thread.id -1 %}" class="hover:text-blue-500 {% if user_vote == -1 %}downvoted{% endif %}">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
+                    </a>
                 </div>
 
                 <!-- Post Content -->
@@ -108,6 +112,29 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const upvoteBtn = document.getElementById('upvote-btn');
+            const downvoteBtn = document.getElementById('downvote-btn');
+            const voteCount = document.getElementById('vote-count');
+
+            function handleVote(event) {
+                event.preventDefault();
+                fetch(this.href)
+                    .then(response => response.json())
+                    .then(data => {
+                        voteCount.textContent = data.total_votes;
+                        upvoteBtn.classList.remove('upvoted');
+                        downvoteBtn.classList.remove('downvoted');
+                        if (data.user_vote === 1) {
+                            upvoteBtn.classList.add('upvoted');
+                        } else if (data.user_vote === -1) {
+                            downvoteBtn.classList.add('downvoted');
+                        }
+                    });
+            }
+
+            upvoteBtn.addEventListener('click', handleVote);
+            downvoteBtn.addEventListener('click', handleVote);
+
             // Find all comment toggle buttons
             const toggleButtons = document.querySelectorAll('.comment-toggle-btn');
 
