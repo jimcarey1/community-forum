@@ -5,7 +5,30 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import QuerySet
 
 from .forms import ThreadForm, CommentForm
-from .models import Forum, Thread, Category, Comment, Vote
+from .models import Forum, Thread, Category, Comment, Vote, CommentVote
+
+@login_required
+def vote_comment(request: HttpRequest, id: int, vote_value: int):
+    comment = get_object_or_404(Comment, pk=id)
+    vote, created = CommentVote.objects.get_or_create(
+        user=request.user,
+        comment=comment,
+        defaults={'value': vote_value}
+    )
+    
+    new_vote_value = vote_value
+
+    if not created:
+        if vote.value == vote_value:
+            vote.delete()
+            new_vote_value = 0 # Vote removed
+        else:
+            vote.value = vote_value
+            vote.save()
+            new_vote_value = vote_value
+
+    return JsonResponse({'total_votes': comment.total_votes, 'user_vote': new_vote_value})
+
 
 def detail_category(request:HttpRequest, id:int)->HttpResponse:
     category_obj = get_object_or_404(Category, pk=id)
@@ -43,6 +66,16 @@ def detail_thread(request:HttpRequest, id:int):
     if request.user.is_authenticated:
         vote = Vote.objects.filter(user=request.user, thread=thread_obj).first()
         context['user_vote'] = vote.value if vote else 0
+        
+        def set_comment_user_vote(comments_qs):
+            for comment in comments_qs:
+                comment_vote = CommentVote.objects.filter(user=request.user, comment=comment).first()
+                comment.user_vote = comment_vote.value if comment_vote else 0
+                if comment.child_comments.exists():
+                    set_comment_user_vote(comment.child_comments.all())
+        
+        set_comment_user_vote(top_level_comments)
+
     return render(request, 'forum/thread/detail_thread.html', context)
 
 @login_required

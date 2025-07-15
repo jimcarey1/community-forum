@@ -135,6 +135,35 @@
             upvoteBtn.addEventListener('click', handleVote);
             downvoteBtn.addEventListener('click', handleVote);
 
+            // Comment voting
+            document.querySelectorAll('[id^="comment-upvote-btn-"]').forEach(btn => {
+                btn.addEventListener('click', handleCommentVote);
+            });
+            document.querySelectorAll('[id^="comment-downvote-btn-"]').forEach(btn => {
+                btn.addEventListener('click', handleCommentVote);
+            });
+
+            function handleCommentVote(event) {
+                event.preventDefault();
+                const commentId = this.id.split('-')[3];
+                const commentUpvoteBtn = document.getElementById(`comment-upvote-btn-${commentId}`);
+                const commentDownvoteBtn = document.getElementById(`comment-downvote-btn-${commentId}`);
+                const commentVoteCount = document.getElementById(`comment-vote-count-${commentId}`);
+
+                fetch(this.href)
+                    .then(response => response.json())
+                    .then(data => {
+                        commentVoteCount.textContent = data.total_votes;
+                        commentUpvoteBtn.classList.remove('upvoted');
+                        commentDownvoteBtn.classList.remove('downvoted');
+                        if (data.user_vote === 1) {
+                            commentUpvoteBtn.classList.add('upvoted');
+                        } else if (data.user_vote === -1) {
+                            commentDownvoteBtn.classList.add('downvoted');
+                        }
+                    });
+            }
+
             // Find all comment toggle buttons
             const toggleButtons = document.querySelectorAll('.comment-toggle-btn');
 

@@ -100,5 +100,18 @@ class Comment(models.Model):
     def __str__(self):
         return self.content[:50]
     
+    @property
+    def total_votes(self):
+        return self.votes.aggregate(total=Sum('value'))['total'] or 0
+    
     class Meta:
         db_table = 'comments'
+
+class CommentVote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, related_name='votes', on_delete=models.CASCADE)
+    value = models.IntegerField()
+
+    class Meta:
+        db_table = 'comment_votes'
+        unique_together = ('user', 'comment')
