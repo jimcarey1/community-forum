@@ -1,3 +1,7 @@
+"""
+This module defines the database models for the forum application.
+It includes models for categories, forums, threads, comments, and votes.
+"""
 from django.db import models
 from django.db.models import Sum
 
@@ -8,6 +12,9 @@ from utils.slug_field import slug_field
 
 # Create your models here.
 class Category(models.Model):
+    """
+    Represents a category in the forum. Categories can have a parent, forming a hierarchical structure.
+    """
     name = models.CharField(max_length=50, unique=True)
     slug = models.CharField(max_length=40, blank=True)
     description = models.TextField(default='This category does not have any description.')
@@ -17,9 +24,15 @@ class Category(models.Model):
     deleted_on = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
+        """
+        Returns the string representation of the category, which is its name.
+        """
         return self.name
     
     def save(self, *args, **kwargs):
+        """
+        Overrides the save method to automatically generate a slug if it's not provided.
+        """
         if not self.slug:
             self.slug = slug_field(self.name)
         super().save(*args, **kwargs)
@@ -29,9 +42,15 @@ class Category(models.Model):
     
     @classmethod
     def root(cls):
+        """
+        Returns all root categories (categories with no parent).
+        """
         return cls._default_manager.filter(parent=None)
 
 class Forum(models.Model):
+    """
+    Represents a forum within a category. Forums contain threads.
+    """
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=40, blank=True)
     description = models.TextField(default='This category does not have any descripiton.')
@@ -41,9 +60,15 @@ class Forum(models.Model):
     deleted_on = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
+        """
+        Returns the string representation of the forum, which is its name.
+        """
         return self.name
     
     def save(self, *args, **kwargs):
+        """
+        Overrides the save method to automatically generate a slug if it's not provided.
+        """
         if not self.slug:
             self.slug = slug_field(self.title)
         super().save(*args, **kwargs)
@@ -52,6 +77,9 @@ class Forum(models.Model):
         db_table = 'forums'
 
 class Thread(models.Model):
+    """
+    Represents a thread within a forum. Threads are created by users and contain comments.
+    """
     title = models.CharField(max_length=100)
     slug = models.SlugField(max_length=40, blank=True)
     content = CKEditor5Field('Content', config_name='extends')
@@ -63,15 +91,24 @@ class Thread(models.Model):
     deleted_on = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
+        """
+        Returns the string representation of the thread, which is its title.
+        """
         return self.title
     
     def save(self, *args, **kwargs):
+        """
+        Overrides the save method to automatically generate a slug if it's not provided.
+        """
         if not self.slug:
             self.slug = slug_field(self.title)
         super().save(*args, **kwargs)
     
     @property
     def total_votes(self):
+        """
+        Calculates the total number of votes for the thread.
+        """
         return self.votes.aggregate(total=Sum('value'))['total'] or 0
     
     class Meta:
@@ -80,6 +117,9 @@ class Thread(models.Model):
         permissions = [('can_lock', 'Can Lock')]
 
 class Vote(models.Model):
+    """
+    Represents a user's vote on a thread.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     thread = models.ForeignKey(Thread, related_name='votes', on_delete=models.CASCADE)
     value = models.IntegerField()
@@ -89,6 +129,9 @@ class Vote(models.Model):
         unique_together = ('user', 'thread')
     
 class Comment(models.Model):
+    """
+    Represents a comment on a thread. Comments can be nested (have a parent comment).
+    """
     content = CKEditor5Field('Content', config_name='extends')
     parent = models.ForeignKey('self', related_name='child_comments', on_delete=models.SET_NULL, null=True, blank=True)
     author = models.ForeignKey(User, related_name='comments', on_delete=models.DO_NOTHING)
@@ -98,16 +141,25 @@ class Comment(models.Model):
     deleted_on = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
+        """
+        Returns a truncated string representation of the comment content.
+        """
         return self.content[:50]
     
     @property
     def total_votes(self):
+        """
+        Calculates the total number of votes for the comment.
+        """
         return self.votes.aggregate(total=Sum('value'))['total'] or 0
     
     class Meta:
         db_table = 'comments'
 
 class CommentVote(models.Model):
+    """
+    Represents a user's vote on a comment.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, related_name='votes', on_delete=models.CASCADE)
     value = models.IntegerField()
