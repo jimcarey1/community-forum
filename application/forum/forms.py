@@ -8,7 +8,7 @@ class CommentForm(forms.ModelForm):
         fields = ['content']
         widgets = {
             'content': CKEditor5Widget(
-                attrs={'class':'django_ckeditor_5'}, config_name='default'
+                attrs={'class':'django_ckeditor_5'}, config_name='extends'
             )
         }
     def __init__(self, *args, **kwargs):

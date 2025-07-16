@@ -229,19 +229,12 @@ CKEDITOR_5_CONFIGS = {
     },
     'extends': {
         'blockToolbar': [
-            'paragraph', 'heading1', 'heading2', 'heading3',
-            '|',
             'bulletedList', 'numberedList',
             '|',
             'blockQuote',
         ],
         'toolbar': {
-            'items': ['heading', '|', 'outdent', 'indent', '|', 'bold', 'italic', 'link', 'underline',
-                    '|', 'insertImage',
-                    'numberedList', 'todoList', '|',  'blockQuote', '|',
-                    'fontSize', 'mediaEmbed',
-                    'insertTable',
-                    ],
+            'items': ['link', '|', 'insertImage', 'mediaEmbed','insertTable'],
             'shouldNotGroupWhenFull': 'true'
         },
         'image': {
@@ -260,16 +253,7 @@ CKEDITOR_5_CONFIGS = {
             'contentToolbar': [ 'tableColumn', 'tableRow', 'mergeTableCells',
             'tableProperties', 'tableCellProperties' ],
         },
-        'heading' : {
-            'options': [
-                { 'model': 'paragraph', 'title': 'Paragraph', 'class': 'ck-heading_paragraph' },
-                { 'model': 'heading1', 'view': 'h1', 'title': 'Heading 1', 'class': 'ck-heading_heading1' },
-                { 'model': 'heading2', 'view': 'h2', 'title': 'Heading 2', 'class': 'ck-heading_heading2' },
-                { 'model': 'heading3', 'view': 'h3', 'title': 'Heading 3', 'class': 'ck-heading_heading3' }
-            ]
-        },
-        'min_height': 300,
-        'max_height': 400,
+        'max_height': 200,
     },
     'list': {
         'properties': {

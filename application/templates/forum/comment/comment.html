@@ -30,15 +30,16 @@
         <div class="w-full">
             <!-- Comment metadata: author, time, and the collapse button -->
             <div class="text-xs text-gray-500 flex items-center mb-1">
-                <a href="#" class="font-bold text-gray-800 hover:underline">{{ comment.author.username }}</a>
+                <button class="comment-toggle-btn text-xs mr-1 p-1">[–]</button>
+                <a href="#" class="font-bold text-gray-800 hover:underline comment-author">{{ comment.author.username }}</a>
 
                 <!-- Display 'OP' badge if the commenter is the thread's original poster -->
                 {% if comment.thread.author == comment.author %}
-                    <span class="text-white bg-blue-600 text-xs font-semibold px-1.5 py-0.5 rounded-full ml-2">OP</span>
+                    <span class="text-white bg-blue-600 text-xs font-semibold px-1.5 py-0.5 rounded-full ml-2 comment-meta-hidden">OP</span>
                 {% endif %}
 
-                <span class="mx-2">&middot;</span>
-                <span>{{ comment.created_on|timesince }} ago</span>
+                <span class="mx-2 comment-meta-hidden">&middot;</span>
+                <span class="comment-meta-hidden">{{ comment.created_on|timesince }} ago</span>
             </div>
 
             <!-- The actual body of the comment -->

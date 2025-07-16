@@ -216,7 +216,7 @@
                         
                         // Toggle the button text
                         if (this.textContent === '[+]') {
-                            this.textContent = '[-]';
+                            this.textContent = '[–]';
                              commentMeta.forEach(meta => meta.classList.remove('hidden'));
                         } else {
                             this.textContent = '[+]';
@@ -225,30 +225,8 @@
                     }
                 });
             });
-
-            // Initially collapse all replies by default for a cleaner look
-            document.querySelectorAll('.comment-toggle-btn').forEach(button => {
-                 // Don't trigger click on buttons inside already hidden containers
-                if (!button.closest('.hidden')) {
-                    button.click();
-                }
-            });
         });
-        document.querySelectorAll('.django_ckeditor_5').forEach(editorElement => {
-            window.ClassicEditor
-                .create(editorElement, {
-                    licenseKey: 'GPL',
-                    height: 200
-                })
-                .then(editor => {
-                    // Store the editor instance if needed, perhaps in a map by element ID
-                    // window.editors = window.editors || {};
-                    // window.editors[editorElement.id] = editor;
-                })
-                .catch(error => {
-                    console.error('Error initializing CKEditor:', error);
-                });
-        });
+        
 
     </script>
 </body>

@@ -99,7 +99,6 @@ def detail_thread(request:HttpRequest, id:int):
                     set_comment_user_vote_and_form(comment.child_comments.all())
         
         set_comment_user_vote_and_form(top_level_comments)
-    print(form.fields['content'].widget, form.fields['content'].__dict__)
 
     return render(request, 'forum/thread/detail_thread.html', context)
 
@@ -111,18 +110,62 @@ def create_comment(request:HttpRequest, id:int):
     """
     thread_obj = get_object_or_404(Thread, pk=id)
     if request.method == 'POST':
-        form = CommentForm(request.POST)
+        parent_id = request.POST.get('parent')
+        if parent_id:
+            form = CommentForm(request.POST, prefix=f'comment_{parent_id}')
+        else:
+            form = CommentForm(request.POST)
+        
         if form.is_valid():
-            print('The form is valid.')
             comment = form.save(commit=False)
             comment.author = request.user
             comment.thread = thread_obj
-            parent_id = request.POST.get('parent')
             if parent_id:
                 comment.parent = get_object_or_404(Comment, pk=parent_id)
             comment.save()
             return redirect('detail_thread_url', id=thread_obj.id)
-        return render(request, 'forum/thread/detail_thread.html', {'form': form, 'thread': thread_obj})
+        
+        # If form is invalid, we need to re-render the page with the errors.
+        # This is complex because we have multiple forms. We'll pass the invalid
+        # form back into the context, and the template will have to handle it.
+        top_level_comments = thread_obj.comments.filter(parent__isnull=True)
+        context = {
+            'thread': thread_obj,
+            'comments': top_level_comments,
+        }
+        if parent_id:
+            # Find the specific comment that was being replied to and attach the error form
+            def find_and_set_error_form(comments_qs):
+                for comment in comments_qs:
+                    if str(comment.id) == parent_id:
+                        comment.reply_form = form
+                        return True
+                    if comment.child_comments.exists():
+                        if find_and_set_error_form(comment.child_comments.all()):
+                            return True
+                return False
+            find_and_set_error_form(top_level_comments)
+        else:
+            context['form'] = form
+
+        # Re-populate other necessary context data
+        if request.user.is_authenticated:
+            vote = Vote.objects.filter(user=request.user, thread=thread_obj).first()
+            context['user_vote'] = vote.value if vote else 0
+            
+            def set_comment_user_vote_and_form(comments_qs):
+                for comment in comments_qs:
+                    comment_vote = CommentVote.objects.filter(user=request.user, comment=comment).first()
+                    comment.user_vote = comment_vote.value if comment_vote else 0
+                    # Avoid overwriting the form with errors
+                    if not hasattr(comment, 'reply_form'):
+                         comment.reply_form = CommentForm(prefix=f'comment_{comment.id}')
+                    if comment.child_comments.exists():
+                        set_comment_user_vote_and_form(comment.child_comments.all())
+            
+            set_comment_user_vote_and_form(top_level_comments)
+
+        return render(request, 'forum/thread/detail_thread.html', context)
     else:
         form = CommentForm()
         return render(request, 'forum/thread/detail_thread.html', {'form': form, 'thread': thread_obj})
