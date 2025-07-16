@@ -1,15 +1,13 @@
 from django import forms
 from .models import Thread, Comment
-from django_ckeditor_5.widgets import CKEditor5Widget
+from django.forms.widgets import Textarea
 
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['content']
         widgets = {
-            'content': CKEditor5Widget(
-                attrs={'class':'django_ckeditor_5'}, config_name='extends'
-            )
+            'content': Textarea(attrs={'class': 'w-full bg-gray-800 border-gray-700 rounded-md'})
         }
     def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -23,9 +21,7 @@ class ThreadForm(forms.ModelForm):
         model = Thread
         fields = ['title', 'content']
         widgets = {
-            'content': CKEditor5Widget(
-                attrs={'class': 'django_ckeditor_5'}, config_name='extends'
-            )
+            'content': Textarea(attrs={'class': 'w-full bg-gray-800 border-gray-700 rounded-md'})
         }
 
     def __init__(self, *args, **kwargs):

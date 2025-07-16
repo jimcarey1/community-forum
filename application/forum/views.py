@@ -1,7 +1,3 @@
-"""
-This module defines the views for the forum application.
-It handles requests related to categories, forums, threads, comments, and voting.
-"""
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -80,7 +76,7 @@ def detail_thread(request:HttpRequest, id:int):
     """
     thread_obj = get_object_or_404(Thread, pk=id)
     top_level_comments = thread_obj.comments.filter(parent__isnull=True)
-    form:Form = CommentForm()
+    form = CommentForm()
     context = {
         'thread': thread_obj, 
         'comments':top_level_comments, 
@@ -102,6 +98,9 @@ def detail_thread(request:HttpRequest, id:int):
 
     return render(request, 'forum/thread/detail_thread.html', context)
 
+import json
+from django.template.loader import render_to_string
+
 @login_required
 def create_comment(request:HttpRequest, id:int):
     """
@@ -110,65 +109,24 @@ def create_comment(request:HttpRequest, id:int):
     """
     thread_obj = get_object_or_404(Thread, pk=id)
     if request.method == 'POST':
-        parent_id = request.POST.get('parent')
-        if parent_id:
-            form = CommentForm(request.POST, prefix=f'comment_{parent_id}')
-        else:
-            form = CommentForm(request.POST)
-        
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.author = request.user
-            comment.thread = thread_obj
-            if parent_id:
-                comment.parent = get_object_or_404(Comment, pk=parent_id)
-            comment.save()
-            return redirect('detail_thread_url', id=thread_obj.id)
-        
-        # If form is invalid, we need to re-render the page with the errors.
-        # This is complex because we have multiple forms. We'll pass the invalid
-        # form back into the context, and the template will have to handle it.
-        top_level_comments = thread_obj.comments.filter(parent__isnull=True)
-        context = {
-            'thread': thread_obj,
-            'comments': top_level_comments,
-        }
-        if parent_id:
-            # Find the specific comment that was being replied to and attach the error form
-            def find_and_set_error_form(comments_qs):
-                for comment in comments_qs:
-                    if str(comment.id) == parent_id:
-                        comment.reply_form = form
-                        return True
-                    if comment.child_comments.exists():
-                        if find_and_set_error_form(comment.child_comments.all()):
-                            return True
-                return False
-            find_and_set_error_form(top_level_comments)
-        else:
-            context['form'] = form
+        data = json.loads(request.body)
+        content = data.get('content')
+        parent_id = data.get('parent')
 
-        # Re-populate other necessary context data
-        if request.user.is_authenticated:
-            vote = Vote.objects.filter(user=request.user, thread=thread_obj).first()
-            context['user_vote'] = vote.value if vote else 0
-            
-            def set_comment_user_vote_and_form(comments_qs):
-                for comment in comments_qs:
-                    comment_vote = CommentVote.objects.filter(user=request.user, comment=comment).first()
-                    comment.user_vote = comment_vote.value if comment_vote else 0
-                    # Avoid overwriting the form with errors
-                    if not hasattr(comment, 'reply_form'):
-                         comment.reply_form = CommentForm(prefix=f'comment_{comment.id}')
-                    if comment.child_comments.exists():
-                        set_comment_user_vote_and_form(comment.child_comments.all())
-            
-            set_comment_user_vote_and_form(top_level_comments)
+        if content:
+            comment = Comment.objects.create(
+                author=request.user,
+                thread=thread_obj,
+                content=content,
+                parent_id=parent_id
+            )
+            # Render the new comment to an HTML string
+            comment_html = render_to_string('forum/comment/comment.html', {'comment': comment, 'request': request, 'thread': thread_obj})
+            return JsonResponse({'success': True, 'comment_html': comment_html})
+        else:
+            return JsonResponse({'success': False, 'error': 'Content cannot be empty.'})
 
-        return render(request, 'forum/thread/detail_thread.html', context)
-    else:
-        form = CommentForm()
-        return render(request, 'forum/thread/detail_thread.html', {'form': form, 'thread': thread_obj})
+    return redirect('detail_thread_url', id=thread_obj.id)
 
 @login_required
 def vote_thread(request: HttpRequest, id: int, vote_value: int):
