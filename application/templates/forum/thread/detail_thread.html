@@ -19,20 +19,17 @@
         .downvoted {
             color: #3b82f6; /* blue-500 */
         }
-        /* Styles for the comment component from the previous step */
+        /* Styles for the comment component from the previous step
         .thread-line-container {
             flex-grow: 1;
             display: flex;
             justify-content: center;
         }
         .thread-line {
-            width: 2px;
-            background-color: white;
+            width: 1px;
+            background-color: #4A4A4C; 
             transition: background-color 0.2s ease;
-        }
-        .user-info:hover .thread-line {
-            background-color: #d7dadc;
-        }
+        } */
         .toggle-indicator {
             color: #818384;
             font-weight: bold;
@@ -54,6 +51,7 @@
     </style>
 </head>
 <body class="text-white">
+    <div style="display: none;">{% csrf_token %}</div>
 
     <div class="container mx-auto max-w-4xl p-4">
         <!-- Main Thread Post -->
@@ -102,21 +100,7 @@
             </div>
         </div>
 
-        {% if request.user.is_authenticated %}
-        <!-- Main Comment Form -->
-        <div id="comment-form-container" class="rounded-lg p-4 mb-6 hidden">
-            <p class="text-xs mb-2 text-white">Comment as <span class="text-blue-400 font-medium">{{ user.username }}</span></p>
-            <form method="post" action="{% url 'create_comment_url' thread.id %}">
-                {% csrf_token %}
-                {{form}}
-                <div class="flex justify-end mt-2">
-                    <button type="submit" class="bg-gray-200 text-black font-bold py-2 px-4 rounded-full hover:bg-white transition duration-300 text-sm">
-                        Comment
-                    </button>
-                </div>
-            </form>
-        </div>
-        {% endif %}
+        
 
         <!-- Comments Section -->
         <div class="comments-section rounded-lg py-4">
@@ -133,6 +117,8 @@
     <script src="{% static 'js/ckeditor.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            // Thread voting
             const upvoteBtn = document.getElementById('upvote-btn');
             const downvoteBtn = document.getElementById('downvote-btn');
             const voteCount = document.getElementById('vote-count');
@@ -153,34 +139,134 @@
                     });
             }
 
-            upvoteBtn.addEventListener('click', handleVote);
-            downvoteBtn.addEventListener('click', handleVote);
+            if (upvoteBtn) upvoteBtn.addEventListener('click', handleVote);
+            if (downvoteBtn) downvoteBtn.addEventListener('click', handleVote);
 
+            // Main reply button for the thread
             const replyButton = document.getElementById('reply-button');
-            const commentFormContainer = document.getElementById('comment-form-container');
+            const threadPost = document.querySelector('.thread-post');
 
-            if (replyButton && commentFormContainer) {
+            if (replyButton && threadPost) {
                 replyButton.addEventListener('click', function() {
-                    commentFormContainer.classList.toggle('hidden');
+                    handleThreadReplyButtonClick();
                 });
             }
 
-            // Comment voting
-            document.querySelectorAll('[id^="comment-upvote-btn-"]').forEach(btn => {
-                btn.addEventListener('click', handleCommentVote);
-            });
-            document.querySelectorAll('[id^="comment-downvote-btn-"]').forEach(btn => {
-                btn.addEventListener('click', handleCommentVote);
+            function handleThreadReplyButtonClick() {
+                if (activeReplyForm) {
+                    const wasOpenForThread = activeReplyForm.parentElement === threadPost.parentElement;
+                    activeReplyForm.remove();
+                    activeReplyForm = null;
+                    if (wasOpenForThread) {
+                        return; // Just close it
+                    }
+                }
+
+                const username = "{{ user.username|escapejs }}";
+                const url = "{% url 'create_comment_url' thread.id %}";
+
+                const formWrapper = document.createElement('div');
+                formWrapper.className = 'reply-form-wrapper rounded-lg p-4 mb-6';
+                formWrapper.innerHTML = `
+                    <p class="text-xs mb-2 text-white">Comment as <span class="text-blue-400 font-medium">${username}</span></p>
+                    <form method="post" action="${url}" data-url="${url}" class="text-black">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <textarea name="content"></textarea>
+                        <div class="flex items-center justify-end mt-2 space-x-2">
+                            <button type="button" class="cancel-reply-btn text-sm font-medium text-white hover:text-gray-300">Cancel</button>
+                            <button type="submit" class="bg-gray-200 text-black font-bold py-2 px-4 rounded-full hover:bg-white transition duration-300 text-sm">Comment</button>
+                        </div>
+                    </form>
+                `;
+                
+                threadPost.after(formWrapper);
+                activeReplyForm = formWrapper;
+
+                const textarea = formWrapper.querySelector('textarea');
+                initializeCKEditor(textarea);
+
+                formWrapper.querySelector('.cancel-reply-btn').addEventListener('click', () => {
+                    formWrapper.remove();
+                    activeReplyForm = null;
+                });
+
+                formWrapper.querySelector('form').addEventListener('submit', handleThreadReplySubmit);
+            }
+
+            function handleThreadReplySubmit(event) {
+                event.preventDefault();
+                const form = event.target;
+                const url = form.dataset.url;
+                const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const textarea = form.querySelector('textarea');
+                const editor = textarea.ckeditorInstance;
+
+                if (editor) {
+                    const content = editor.getData();
+                    if (!content.trim()) {
+                        return;
+                    }
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            content: content
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            commentsSection.insertAdjacentHTML('afterbegin', data.comment_html);
+                            form.parentElement.remove(); // remove formWrapper
+                            activeReplyForm = null;
+                        } else {
+                            console.error(data.error);
+                            alert(data.error || 'Could not post comment.');
+                        }
+                    });
+                }
+            }
+
+            const commentsSection = document.querySelector('.comments-section');
+            if (!commentsSection) return;
+
+            let activeReplyForm = null;
+
+            commentsSection.addEventListener('click', function(event) {
+                const target = event.target;
+                const upvoteBtn = target.closest('[id^="comment-upvote-btn-"]');
+                const downvoteBtn = target.closest('[id^="comment-downvote-btn-"]');
+                const replyBtn = target.closest('[id^="reply-comment-btn-"]');
+                const toggleBtn = target.closest('.comment-toggle-btn');
+
+                if (upvoteBtn || downvoteBtn) {
+                    event.preventDefault();
+                    handleCommentVote(upvoteBtn || downvoteBtn);
+                    return;
+                }
+
+                if (replyBtn) {
+                    event.preventDefault();
+                    handleReplyButtonClick(replyBtn);
+                    return;
+                }
+
+                if (toggleBtn) {
+                    handleToggleClick(toggleBtn);
+                    return;
+                }
             });
 
-            function handleCommentVote(event) {
-                event.preventDefault();
-                const commentId = this.id.split('-')[3];
+            function handleCommentVote(btn) {
+                const commentId = btn.id.split('-')[3];
                 const commentUpvoteBtn = document.getElementById(`comment-upvote-btn-${commentId}`);
                 const commentDownvoteBtn = document.getElementById(`comment-downvote-btn-${commentId}`);
                 const commentVoteCount = document.getElementById(`comment-vote-count-${commentId}`);
 
-                fetch(this.href)
+                fetch(btn.href)
                     .then(response => response.json())
                     .then(data => {
                         commentVoteCount.textContent = data.total_votes;
@@ -194,103 +280,121 @@
                     });
             }
 
-            // Handle reply button clicks for comments
-            document.querySelectorAll('[id^="reply-comment-btn-"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const commentId = this.id.split('-')[3];
-                    const replyForm = document.getElementById(`comment-reply-form-${commentId}`);
-                    if (replyForm) {
-                        replyForm.classList.toggle('hidden');
-                        const textarea = replyForm.querySelector('textarea');
-                        initializeCKEditor(textarea);
+            function handleReplyButtonClick(btn) {
+                const commentId = btn.id.split('-')[3];
+                const commentContainer = btn.closest('.comment-container');
+
+                if (activeReplyForm) {
+                    const wasOpenForThisComment = activeReplyForm.parentElement.closest('.comment-container') === commentContainer;
+                    activeReplyForm.remove();
+                    activeReplyForm = null;
+                    if (wasOpenForThisComment) {
+                        return; // Just close it
                     }
+                }
+
+                const username = "{{ user.username|escapejs }}";
+                const url = "{% url 'create_comment_url' thread.id %}";
+
+                const formWrapper = document.createElement('div');
+                formWrapper.className = 'reply-form-wrapper mt-4';
+                formWrapper.innerHTML = `
+                    <form method="post" action="${url}" data-comment-id="${commentId}" data-url="${url}" class="text-black">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <textarea name="content"></textarea>
+                        <div class="flex items-center justify-end mt-2 space-x-2">
+                            <button type="button" class="cancel-reply-btn text-sm font-medium text-white hover:text-gray-300">Cancel</button>
+                            <button type="submit" class="bg-gray-200 text-black font-bold py-2 px-4 rounded-full hover:bg-white transition duration-300 text-sm">Reply</button>
+                        </div>
+                    </form>
+                `;
+                
+                commentContainer.appendChild(formWrapper);
+
+                activeReplyForm = formWrapper;
+
+                const textarea = formWrapper.querySelector('textarea');
+                initializeCKEditor(textarea);
+
+                formWrapper.querySelector('.cancel-reply-btn').addEventListener('click', () => {
+                    formWrapper.remove();
+                    activeReplyForm = null;
                 });
-            });
 
-            // Handle manual reply form submission
-            document.querySelectorAll('.manual-reply-form').forEach(form => {
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    const commentId = this.dataset.commentId;
-                    const url = this.dataset.url;
-                    const csrfToken = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
-                    const textarea = this.querySelector('textarea');
-                    const editor = textarea.ckeditorInstance;
-                    console.log(editor)
+                formWrapper.querySelector('form').addEventListener('submit', handleManualReplySubmit);
+            }
 
-                    if (editor) {
-                        const content = editor.getData();
-                        console.log(content)
-                        fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': csrfToken
-                            },
-                            body: JSON.stringify({
-                                content: content,
-                                parent: commentId
-                            })
+            function handleManualReplySubmit(event) {
+                event.preventDefault();
+                const form = event.target;
+                const commentId = form.dataset.commentId;
+                const url = form.dataset.url;
+                const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const textarea = form.querySelector('textarea');
+                const editor = textarea.ckeditorInstance;
+
+                if (editor) {
+                    const content = editor.getData();
+                    if (!content.trim()) {
+                        return;
+                    }
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            content: content,
+                            parent: commentId
                         })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Create the new comment element
-                                const newComment = document.createElement('div');
-                                newComment.innerHTML = data.comment_html;
-                                // Find the children container of the parent comment
-                                const parentComment = document.getElementById(`comment-reply-form-${commentId}`).closest('.comment');
-                                const childrenContainer = parentComment.querySelector('.children');
-                                childrenContainer.appendChild(newComment);
-                                // Clear the editor and hide the form
-                                editor.setData('');
-                                this.closest('.reply-form').classList.add('hidden');
-                            } else {
-                                // Handle errors
-                                console.error(data.error);
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const parentCommentContainer = form.closest('.comment-container');
+                            let repliesContainer = parentCommentContainer.querySelector('.replies-container');
+                            if (!repliesContainer) {
+                                repliesContainer = document.createElement('div');
+                                repliesContainer.className = 'replies-container';
+                                parentCommentContainer.appendChild(repliesContainer);
                             }
-                        });
-                    }
-                });
-            });
+                            
+                            if(parentCommentContainer.querySelector('.comment-body').classList.contains('hidden')) {
+                                parentCommentContainer.querySelector('.comment-toggle-btn').click();
+                            }
 
-            // Find all comment toggle buttons
-            const toggleButtons = document.querySelectorAll('.comment-toggle-btn');
-
-            toggleButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    // Find the closest parent comment-container
-                    const parentComment = this.closest('.comment-container');
-                    
-                    if (parentComment) {
-                        // Find the replies container within this comment container
-                        const replies = parentComment.querySelector('.replies-container');
-                        // Find the main body of the comment
-                        const commentBody = parentComment.querySelector('.comment-body');
-                        // Find the metadata to hide
-                        const commentMeta = parentComment.querySelectorAll('.comment-meta-hidden');
-
-                        if (replies) {
-                            // Toggle visibility of the replies
-                            replies.classList.toggle('hidden');
-                        }
-
-                        if (commentBody) {
-                             // Toggle visibility of the comment body
-                            commentBody.classList.toggle('hidden');
-                        }
-                        
-                        // Toggle the button text
-                        if (this.textContent === '[+]') {
-                            this.textContent = '[–]';
-                             commentMeta.forEach(meta => meta.classList.remove('hidden'));
+                            repliesContainer.insertAdjacentHTML('beforeend', data.comment_html);
+                            
+                            form.parentElement.remove(); // remove formWrapper
+                            activeReplyForm = null;
                         } else {
-                            this.textContent = '[+]';
-                             commentMeta.forEach(meta => meta.classList.add('hidden'));
+                            console.error(data.error);
+                            alert(data.error || 'Could not post reply.');
                         }
+                    });
+                }
+            }
+
+            function handleToggleClick(btn) {
+                const parentComment = btn.closest('.comment-container');
+                if (parentComment) {
+                    const replies = parentComment.querySelector('.replies-container');
+                    const commentBody = parentComment.querySelector('.comment-body');
+                    const commentMeta = parentComment.querySelectorAll('.comment-meta-hidden');
+
+                    if (replies) replies.classList.toggle('hidden');
+                    if (commentBody) commentBody.classList.toggle('hidden');
+                    
+                    if (btn.textContent.trim() === '[+]') {
+                        btn.innerHTML = '[&ndash;]';
+                        commentMeta.forEach(meta => meta.classList.remove('hidden'));
+                    } else {
+                        btn.textContent = '[+]';
+                        commentMeta.forEach(meta => meta.classList.add('hidden'));
                     }
-                });
-            });
+                }
+            }
         });
     </script>
 </body>

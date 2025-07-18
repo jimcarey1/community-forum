@@ -1,92 +1,57 @@
-<div class="comment flex space-x-3 text-white">
-
+<div class="comment-container flex space-x-3 text-white mb-4">
     <!-- Left Gutter: Avatar and Thread Line -->
     <div class="flex flex-col items-center w-8 flex-shrink-0">
-        <!-- 
-            TODO: Replace this placeholder with the user's actual avatar.
-            For example: <img class="w-8 h-8 rounded-full" src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }} avatar"> 
-        -->
         <img class="w-8 h-8 rounded-full" src="https://placehold.co/40x40/555/ffffff?text={{ comment.author.username|first|upper }}" alt="{{ comment.author.username }} avatar">
-        
-        <!-- The vertical line that connects child comments -->
-        <div class="thread-line-container">
-            <div class="thread-line w-full"></div>
+        <div class="flex-grow w-full flex justify-center">
+            <div class=""></div>
         </div>
     </div>
 
-    <!-- Right Section: Comment Content and Actions -->
+    <!-- Right Section: Comment Content and its Replies -->
     <div class="flex-grow">
-        <!-- User Info Header (Clickable for Toggling) -->
-        <div class="user-info flex items-center space-x-2 text-xs cursor-pointer">
-            <!-- The toggle indicator [+] or [-] will be inserted here by JavaScript -->
+        <div class="user-info flex items-center space-x-2 text-xs">
+            <button class="comment-toggle-btn text-white text-xs">[–]</button>
             <span class="font-bold text-white hover:underline">{{ comment.author.username }}</span>
-            
-            <!-- Display 'OP' badge if the commenter is the thread's original poster -->
             {% if comment.thread.author == comment.author %}
                 <span class="px-2 py-0.5 bg-blue-500 text-white rounded-full font-medium">OP</span>
             {% endif %}
-
-            <span class="text-white">&middot;</span>
-            <span class="text-white">{{ comment.created_on|timesince }} ago</span>
+            <span class="text-white comment-meta-hidden">&middot;</span>
+            <span class="text-white comment-meta-hidden">{{ comment.created_on|timesince }} ago</span>
         </div>
 
-        <!-- This div contains everything that gets collapsed -->
-        <div class="collapsible">
-            <!-- Comment Body -->
+        <div class="comment-body">
             <div class="prose prose-sm max-w-none text-white mt-2">
                 {{ comment.content|safe }}
             </div>
 
-            <!-- Action Bar: Voting, Reply, Share, etc. -->
             <div class="action-bar mt-2 flex items-center space-x-4 text-xs font-bold text-white">
-                
-                <!-- Voting Section -->
                 <div class="flex items-center space-x-1">
                     {% if request.user.is_authenticated %}
-                        <a href="{% url 'vote_comment_url' comment.id 1 %}" class="p-1 rounded-full hover:bg-gray-700 {% if comment.user_vote == 1 %}text-red-500{% endif %}" title="Upvote">
+                        <a id="comment-upvote-btn-{{ comment.id }}" href="{% url 'vote_comment_url' comment.id 1 %}" class="p-1 rounded-full hover:bg-gray-700 {% if comment.user_vote == 1 %}text-red-500{% endif %}" title="Upvote">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 01.707.293l5 5a1 1 0 01-1.414 1.414L11 5.414V16a1 1 0 11-2 0V5.414L5.707 8.707a1 1 0 01-1.414-1.414l5-5A1 1 0 0110 2z" /></svg>
                         </a>
                     {% endif %}
-                    <span class="text-white">{{ comment.total_votes }}</span>
+                    <span id="comment-vote-count-{{ comment.id }}" class="text-white">{{ comment.total_votes }}</span>
                     {% if request.user.is_authenticated %}
-                        <a href="{% url 'vote_comment_url' comment.id -1 %}" class="p-1 rounded-full hover:bg-gray-700 {% if comment.user_vote == -1 %}text-blue-500{% endif %}" title="Downvote">
+                        <a id="comment-downvote-btn-{{ comment.id }}" href="{% url 'vote_comment_url' comment.id -1 %}" class="p-1 rounded-full hover:bg-gray-700 {% if comment.user_vote == -1 %}text-blue-500{% endif %}" title="Downvote">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 18a1 1 0 01-.707-.293l-5-5a1 1 0 011.414-1.414L9 14.586V4a1 1 0 112 0v10.586l3.293-3.293a1 1 0 011.414 1.414l-5 5A1 1 0 0110 18z" /></svg>
                         </a>
                     {% endif %}
                 </div>
-
-                <!-- Reply Button -->
+                {% if request.user.is_authenticated %}
                 <button id="reply-comment-btn-{{ comment.id }}" class="flex items-center space-x-1 p-1 rounded-md hover:bg-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                     <span>Reply</span>
                 </button>
-
-                <!-- Placeholder buttons -->
-                <button class="p-1 rounded-md hover:bg-gray-700"><span>Award</span></button>
-                <button class="p-1 rounded-md hover:bg-gray-700"><span>Share</span></button>
+                {% endif %}
             </div>
+        </div>
 
-            <!-- Reply Form (hidden by default) -->
-            {% if request.user.is_authenticated %}
-            <div id="comment-reply-form-{{ comment.id }}" class="mt-4 text-black hidden reply-form">
-                <form class="manual-reply-form" data-comment-id="{{ comment.id }}" data-url="{% url 'create_comment_url' thread.id %}">
-                    {% csrf_token %}
-                    <textarea name="content" class="w-full bg-gray-800 border-gray-700 rounded-md"></textarea>
-                    <div class="flex justify-end mt-2">
-                        <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-full hover:bg-blue-600 transition duration-300 text-sm">
-                            Submit Reply
-                        </button>
-                    </div>
-                </form>
-            </div>
-            {% endif %}
-
-            <!-- Child Comments (Recursion) -->
-            <div class="children mt-4 space-y-4">
-                {% for child_comment in comment.child_comments.all %}
-                    {% include "forum/comment/comment.html" with comment=child_comment thread=thread %}
-                {% endfor %}
-            </div>
+        <!-- Child Comments (Recursion) -->
+        <div class="replies-container space-y-4">
+            {% for child_comment in comment.child_comments.all %}
+                {% include "forum/comment/comment.html" with comment=child_comment thread=thread %}
+            {% endfor %}
         </div>
     </div>
 </div>
